@@ -1,0 +1,16 @@
+[
+  {
+    "case_id": "echo-hello",
+    "input_text": "hello",
+    "expected_answer": "hello",
+    "tags": ["smoke", "echo"],
+    "validator_name": "exact_match"
+  },
+  {
+    "case_id": "echo-agent",
+    "input_text": "agentic harness",
+    "expected_answer": "agentic",
+    "tags": ["smoke", "contains"],
+    "validator_name": "contains"
+  }
+]
