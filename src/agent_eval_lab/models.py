@@ -16,6 +16,20 @@ class EvalCase:
 
 
 @dataclass
+class PromptSpec:
+    prompt_id: str
+    version: str
+    template: str
+    description: str
+
+    def render(self, case: EvalCase) -> str:
+        return self.template.format(
+            input_text=case.input_text,
+            case_id=case.case_id,
+        )
+
+
+@dataclass
 class EvalConfig:
     name: str
     validator: str = "exact_match"
@@ -41,6 +55,7 @@ class CaseResult:
     failure_reason: str | None
     failure_category: str | None
     tags: List[str] = field(default_factory=list)
+    prompt_text: str | None = None
 
 
 @dataclass
@@ -51,6 +66,8 @@ class EvalSummary:
     pass_rate: float
     average_score: float
     failure_categories: Dict[str, int] = field(default_factory=dict)
+    prompt_id: str | None = None
+    prompt_version: str | None = None
 
 
 @dataclass

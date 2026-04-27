@@ -1,0 +1,20 @@
+[
+  {
+    "prompt_id": "baseline",
+    "version": "v1",
+    "template": "{input_text}",
+    "description": "Direct pass-through baseline prompt"
+  },
+  {
+    "prompt_id": "prefix",
+    "version": "v1",
+    "template": "Prompted: {input_text}",
+    "description": "Simple prefixed prompt for prompt-registry testing"
+  },
+  {
+    "prompt_id": "prefix",
+    "version": "v2",
+    "template": "Prompted v2: {input_text}",
+    "description": "Second version for explicit version selection tests"
+  }
+]

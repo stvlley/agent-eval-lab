@@ -1,4 +1,4 @@
-from agent_eval_lab.models import EvalCase, EvalConfig
+from agent_eval_lab.models import EvalCase, EvalConfig, PromptSpec
 from agent_eval_lab.runner import run_evaluation
 
 
@@ -56,3 +56,28 @@ def test_run_evaluation_uses_case_level_validator_settings():
 
     assert result.summary.passed_cases == 1
     assert result.case_results[0].passed is True
+
+
+def test_run_evaluation_records_prompt_metadata_when_prompt_spec_used():
+    dataset = [
+        EvalCase(case_id="1", input_text="hello", expected_answer="Prompted: hello")
+    ]
+    config = EvalConfig(name="prompted")
+    prompt_spec = PromptSpec(
+        prompt_id="baseline",
+        version="v1",
+        template="Prompted: {input_text}",
+        description="test prompt",
+    )
+
+    result = run_evaluation(
+        dataset=dataset,
+        config=config,
+        system_under_test=lambda prompt: prompt,
+        prompt_spec=prompt_spec,
+    )
+
+    assert result.summary.prompt_id == "baseline"
+    assert result.summary.prompt_version == "v1"
+    assert result.case_results[0].prompt_text == "Prompted: hello"
+    assert result.case_results[0].actual_answer == "Prompted: hello"

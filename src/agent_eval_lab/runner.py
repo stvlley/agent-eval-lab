@@ -4,7 +4,7 @@ from collections import Counter
 from typing import Callable, Iterable, List
 from uuid import uuid4
 
-from agent_eval_lab.models import CaseResult, EvalCase, EvalConfig, EvalRunResult, EvalSummary, utc_timestamp
+from agent_eval_lab.models import CaseResult, EvalCase, EvalConfig, EvalRunResult, EvalSummary, PromptSpec, utc_timestamp
 from agent_eval_lab.validators import validate_output
 
 
@@ -15,11 +15,13 @@ def run_evaluation(
     dataset: Iterable[EvalCase],
     config: EvalConfig,
     system_under_test: SystemUnderTest,
+    prompt_spec: PromptSpec | None = None,
 ) -> EvalRunResult:
     case_results: List[CaseResult] = []
 
     for case in dataset:
-        actual_answer = system_under_test(case.input_text)
+        prompt_text = prompt_spec.render(case) if prompt_spec else case.input_text
+        actual_answer = system_under_test(prompt_text)
         outcome = validate_output(case, actual_answer)
         case_results.append(
             CaseResult(
@@ -32,6 +34,7 @@ def run_evaluation(
                 failure_reason=outcome.failure_reason,
                 failure_category=outcome.failure_category,
                 tags=list(case.tags),
+                prompt_text=prompt_text,
             )
         )
 
@@ -57,6 +60,8 @@ def run_evaluation(
             pass_rate=pass_rate,
             average_score=average_score,
             failure_categories=failure_categories,
+            prompt_id=prompt_spec.prompt_id if prompt_spec else None,
+            prompt_version=prompt_spec.version if prompt_spec else None,
         ),
         case_results=case_results,
     )

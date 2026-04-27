@@ -4,4 +4,5 @@ __all__ = [
     "scoring",
     "runner",
     "providers",
+    "prompt_registry",
 ]
