@@ -14,8 +14,10 @@ Local-first starter repo for building agentic harnesses and robust eval pipeline
 ## Supported providers
 - `echo` — returns the input text
 - `static` — returns a fixed configured response
+- `openai` — calls the OpenAI Responses API, gated by `OPENAI_API_KEY`
+- `anthropic` — calls the Anthropic Messages API, gated by `ANTHROPIC_API_KEY`
 
-These are starter adapters so you can validate harness behavior before wiring in real model APIs.
+The real providers are env-var gated so the repo still works locally without paid API access.
 
 ## Supported validators
 - `exact_match`
@@ -33,6 +35,26 @@ PYTHONPATH=src python3 -m agent_eval_lab.cli run --dataset examples/datasets/bas
 PYTHONPATH=src python3 -m agent_eval_lab.cli run --dataset examples/datasets/basic_tasks.json --provider static --provider-response "hello"
 ```
 
+## Real provider usage
+```bash
+export OPENAI_API_KEY=...
+PYTHONPATH=src python3 -m agent_eval_lab.cli run \
+  --dataset examples/datasets/basic_tasks.json \
+  --provider openai \
+  --provider-model gpt-4.1-mini
+
+export ANTHROPIC_API_KEY=...
+PYTHONPATH=src python3 -m agent_eval_lab.cli run \
+  --dataset examples/datasets/basic_tasks.json \
+  --provider anthropic \
+  --provider-model claude-3-5-haiku-latest
+```
+
+## Optional install extras
+```bash
+pip install -e .[providers]
+```
+
 ## Repo shape
 - `src/agent_eval_lab/` core package
 - `tests/` unit tests
@@ -40,7 +62,7 @@ PYTHONPATH=src python3 -m agent_eval_lab.cli run --dataset examples/datasets/bas
 - `runs/` output directory for eval runs
 
 ## Next upgrades
-- OpenAI/Anthropic/LiteLLM adapters
+- LiteLLM adapter
 - prompt/version registry
 - agent traces
 - LLM judge integration

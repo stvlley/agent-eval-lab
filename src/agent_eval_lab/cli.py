@@ -6,7 +6,7 @@ from typing import Sequence
 
 from agent_eval_lab.dataset_io import load_eval_cases
 from agent_eval_lab.models import EvalConfig
-from agent_eval_lab.providers import build_system_under_test
+from agent_eval_lab.providers import build_system_under_test, resolve_provider_client
 from agent_eval_lab.report_io import write_run_report
 from agent_eval_lab.runner import run_evaluation
 
@@ -19,11 +19,20 @@ def build_parser() -> argparse.ArgumentParser:
     run_parser.add_argument("--dataset", required=True, help="Path to JSON dataset")
     run_parser.add_argument("--output-dir", default="runs", help="Directory for JSON reports")
     run_parser.add_argument("--config-name", default="baseline", help="Logical name for this run")
-    run_parser.add_argument("--provider", default="echo", help="Provider adapter to use (echo, static)")
+    run_parser.add_argument(
+        "--provider",
+        default="echo",
+        help="Provider adapter to use (echo, static, openai, anthropic)",
+    )
     run_parser.add_argument(
         "--provider-response",
         default=None,
         help="Fixed response text for the static provider",
+    )
+    run_parser.add_argument(
+        "--provider-model",
+        default=None,
+        help="Model name for real providers like openai or anthropic",
     )
     return parser
 
@@ -38,6 +47,11 @@ def main(argv: Sequence[str] | None = None) -> int:
         provider_config = {}
         if args.provider_response is not None:
             provider_config["response_text"] = args.provider_response
+        if args.provider_model is not None:
+            provider_config["model"] = args.provider_model
+        resolved_client = resolve_provider_client(args.provider)
+        if resolved_client is not None:
+            provider_config["client"] = resolved_client
         system_under_test = build_system_under_test(args.provider, provider_config)
         result = run_evaluation(dataset=dataset, config=config, system_under_test=system_under_test)
         output_path = write_run_report(result, output_dir=Path(args.output_dir))
