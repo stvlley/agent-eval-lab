@@ -6,6 +6,16 @@ from typing import Any, Dict, List
 
 
 @dataclass
+class ComparisonScenario:
+    label: str
+    provider: str
+    provider_model: str | None = None
+    provider_response: str | None = None
+    prompt_id: str | None = None
+    prompt_version: str | None = None
+
+
+@dataclass
 class EvalCase:
     case_id: str
     input_text: str
@@ -77,6 +87,49 @@ class EvalRunResult:
     created_at: str
     summary: EvalSummary
     case_results: List[CaseResult]
+
+    def to_dict(self) -> dict:
+        return asdict(self)
+
+
+@dataclass
+class ComparisonScenarioResult:
+    label: str
+    provider: str
+    provider_model: str | None
+    prompt_id: str | None
+    prompt_version: str | None
+    result: EvalRunResult
+
+
+@dataclass
+class ComparisonRanking:
+    label: str
+    provider: str
+    provider_model: str | None
+    prompt_id: str | None
+    prompt_version: str | None
+    pass_rate: float
+    average_score: float
+    delta_vs_baseline: float
+
+
+@dataclass
+class ComparisonSummary:
+    scenario_count: int
+    baseline_label: str
+    best_label: str
+    best_pass_rate: float
+
+
+@dataclass
+class ComparisonResult:
+    comparison_id: str
+    config_name: str
+    created_at: str
+    summary: ComparisonSummary
+    rankings: List[ComparisonRanking]
+    scenario_results: List[ComparisonScenarioResult]
 
     def to_dict(self) -> dict:
         return asdict(self)

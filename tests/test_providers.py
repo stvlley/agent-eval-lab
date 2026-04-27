@@ -25,6 +25,12 @@ def test_missing_static_response_raises_value_error():
         raise AssertionError("Expected ValueError for missing response_text")
 
 
+def test_static_provider_allows_empty_string_response():
+    system = build_system_under_test(provider_name="static", provider_config={"response_text": ""})
+
+    assert system("ignored") == ""
+
+
 def test_openai_provider_requires_api_key():
     with patch.dict(os.environ, {}, clear=True):
         try:

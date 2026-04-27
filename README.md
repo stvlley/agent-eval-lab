@@ -69,8 +69,60 @@ PYTHONPATH=src python3 -m agent_eval_lab.cli run --dataset examples/datasets/bas
 PYTHONPATH=src python3 -m agent_eval_lab.cli run --dataset examples/datasets/basic_tasks.json --provider static --provider-response "hello"
 PYTHONPATH=src python3 -m agent_eval_lab.cli run --dataset examples/datasets/basic_tasks.json --prompt-file examples/prompts/basic_prompts.json --prompt-id baseline
 PYTHONPATH=src python3 -m agent_eval_lab.cli run --dataset examples/datasets/basic_tasks.json --prompt-file examples/prompts/basic_prompts.json --prompt-id prefix --prompt-version v2
+PYTHONPATH=src python3 -m agent_eval_lab.cli compare --dataset examples/datasets/basic_tasks.json --scenario-file examples/comparisons/basic_compare.json --prompt-file examples/prompts/basic_prompts.json
 ```
 
+## Comparison runner
+Comparison runs are driven by an explicit JSON scenario file so you can compare prompts, providers, and models without hidden flag cross-products.
+
+Each scenario supports:
+- `label`
+- `provider`
+- `provider_model` (optional)
+- `provider_response` (required for `static`)
+- `prompt_id` (optional)
+- `prompt_version` (optional, requires `prompt_id`)
+
+Example scenario file:
+```json
+[
+  {
+    "label": "echo-baseline",
+    "provider": "echo"
+  },
+  {
+    "label": "prefix-prompt",
+    "provider": "echo",
+    "prompt_id": "prefix",
+    "prompt_version": "v1"
+  },
+  {
+    "label": "bad-static",
+    "provider": "static",
+    "provider_response": "wrong"
+  }
+]
+```
+
+The first scenario is treated as the baseline. Comparison reports include:
+- per-scenario nested eval results
+- ranked leaderboard by pass rate, then average score
+- `delta_vs_baseline` for each scenario
+- best scenario metadata in the top-level summary
+
+Run it:
+```bash
+PYTHONPATH=src python3 -m agent_eval_lab.cli compare \
+  --dataset examples/datasets/basic_tasks.json \
+  --scenario-file examples/comparisons/basic_compare.json \
+  --prompt-file examples/prompts/basic_prompts.json
+```
+
+Use this pattern for:
+- prompt A vs prompt B
+- model A vs model B
+- provider A vs provider B
+- baseline vs candidate regression checks
 ## Real provider usage
 ```bash
 export OPENAI_API_KEY=...
@@ -98,7 +150,6 @@ pip install -e .[providers]
 - `runs/` output directory for eval runs
 
 ## Next upgrades
-- comparison runner for prompt/model/provider sweeps
 - LiteLLM adapter
 - agent traces
 - LLM judge integration

@@ -1,0 +1,17 @@
+[
+  {
+    "label": "echo-baseline",
+    "provider": "echo"
+  },
+  {
+    "label": "prefix-prompt",
+    "provider": "echo",
+    "prompt_id": "prefix",
+    "prompt_version": "v1"
+  },
+  {
+    "label": "bad-static",
+    "provider": "static",
+    "provider_response": "wrong"
+  }
+]

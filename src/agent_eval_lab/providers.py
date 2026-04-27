@@ -20,9 +20,9 @@ def build_system_under_test(
         return lambda prompt: prompt
 
     if provider_name == "static":
-        response_text = config.get("response_text")
-        if not response_text:
+        if "response_text" not in config:
             raise ValueError("static provider requires provider_config['response_text']")
+        response_text = config["response_text"]
         return lambda prompt: response_text
 
     if provider_name == "openai":

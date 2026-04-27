@@ -4,11 +4,12 @@ import argparse
 from pathlib import Path
 from typing import Sequence
 
+from agent_eval_lab.comparison import load_comparison_scenarios, run_comparison
 from agent_eval_lab.dataset_io import load_eval_cases
 from agent_eval_lab.models import EvalConfig
 from agent_eval_lab.prompt_registry import load_prompt_specs, select_prompt_spec
 from agent_eval_lab.providers import build_system_under_test, resolve_provider_client
-from agent_eval_lab.report_io import write_run_report
+from agent_eval_lab.report_io import write_comparison_report, write_run_report
 from agent_eval_lab.runner import run_evaluation
 
 
@@ -49,6 +50,17 @@ def build_parser() -> argparse.ArgumentParser:
         "--prompt-version",
         default=None,
         help="Prompt version to select from the prompt registry file",
+    )
+
+    compare_parser = subparsers.add_parser("compare", help="Run a multi-scenario comparison")
+    compare_parser.add_argument("--dataset", required=True, help="Path to JSON dataset")
+    compare_parser.add_argument("--scenario-file", required=True, help="Path to JSON comparison scenario file")
+    compare_parser.add_argument("--output-dir", default="runs", help="Directory for JSON reports")
+    compare_parser.add_argument("--config-name", default="comparison", help="Logical name for this comparison run")
+    compare_parser.add_argument(
+        "--prompt-file",
+        default=None,
+        help="Path to JSON prompt registry file used by prompt-aware scenarios",
     )
     return parser
 
@@ -98,6 +110,30 @@ def main(argv: Sequence[str] | None = None) -> int:
             f"pass_rate={result.summary.pass_rate:.2f} "
             f"prompt_id={result.summary.prompt_id} prompt_version={result.summary.prompt_version} "
             f"failure_categories={result.summary.failure_categories} report={output_path}"
+        )
+        return 0
+
+    if args.command == "compare":
+        dataset = load_eval_cases(Path(args.dataset))
+        scenarios = load_comparison_scenarios(Path(args.scenario_file))
+        if any(scenario.prompt_id is not None for scenario in scenarios) and args.prompt_file is None:
+            raise ValueError("--prompt-file is required when comparison scenarios select prompts")
+
+        prompt_specs = []
+        if args.prompt_file is not None:
+            prompt_specs = load_prompt_specs(Path(args.prompt_file))
+
+        result = run_comparison(
+            dataset=dataset,
+            config=EvalConfig(name=args.config_name),
+            scenarios=scenarios,
+            prompt_specs=prompt_specs,
+        )
+        output_path = write_comparison_report(result, output_dir=Path(args.output_dir))
+        print(
+            f"comparison_id={result.comparison_id} scenarios={result.summary.scenario_count} "
+            f"baseline={result.summary.baseline_label} best={result.summary.best_label} "
+            f"best_pass_rate={result.summary.best_pass_rate:.2f} report={output_path}"
         )
         return 0
 

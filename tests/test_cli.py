@@ -5,6 +5,11 @@ from unittest.mock import patch
 from agent_eval_lab.cli import main
 
 
+def _write_json(path: Path, payload: object) -> Path:
+    path.write_text(json.dumps(payload))
+    return path
+
+
 def test_cli_run_writes_report(tmp_path: Path, capsys):
     dataset_path = tmp_path / "dataset.json"
     dataset_path.write_text(
@@ -316,3 +321,178 @@ def test_cli_validates_prompt_arguments_before_provider_env(tmp_path: Path):
         assert "prompt-file" in str(exc)
     else:
         raise AssertionError("Expected prompt validation to run before provider env checks")
+
+
+def test_cli_compare_writes_comparison_report(tmp_path: Path, capsys):
+    dataset_path = _write_json(
+        tmp_path / "dataset.json",
+        [
+            {
+                "case_id": "echo-1",
+                "input_text": "hello",
+                "expected_answer": "hello"
+            }
+        ],
+    )
+    scenario_path = _write_json(
+        tmp_path / "scenarios.json",
+        [
+            {
+                "label": "baseline",
+                "provider": "echo"
+            },
+            {
+                "label": "bad-static",
+                "provider": "static",
+                "provider_response": "wrong"
+            }
+        ],
+    )
+
+    exit_code = main([
+        "compare",
+        "--dataset",
+        str(dataset_path),
+        "--scenario-file",
+        str(scenario_path),
+        "--output-dir",
+        str(tmp_path / "runs"),
+    ])
+
+    captured = capsys.readouterr()
+    assert exit_code == 0
+    assert "best=baseline" in captured.out
+    assert "baseline=baseline" in captured.out
+    assert len(list((tmp_path / "runs").glob("comparison-*.json"))) == 1
+
+
+def test_cli_compare_supports_prompt_registry(tmp_path: Path, capsys):
+    dataset_path = _write_json(
+        tmp_path / "dataset.json",
+        [
+            {
+                "case_id": "echo-1",
+                "input_text": "hello",
+                "expected_answer": "Prompted: hello"
+            }
+        ],
+    )
+    scenario_path = _write_json(
+        tmp_path / "scenarios.json",
+        [
+            {
+                "label": "prompted",
+                "provider": "echo",
+                "prompt_id": "prefix",
+                "prompt_version": "v1"
+            }
+        ],
+    )
+    prompt_path = _write_json(
+        tmp_path / "prompts.json",
+        [
+            {
+                "prompt_id": "prefix",
+                "version": "v1",
+                "template": "Prompted: {input_text}",
+                "description": "prefix"
+            }
+        ],
+    )
+
+    exit_code = main([
+        "compare",
+        "--dataset",
+        str(dataset_path),
+        "--scenario-file",
+        str(scenario_path),
+        "--prompt-file",
+        str(prompt_path),
+        "--output-dir",
+        str(tmp_path / "runs"),
+    ])
+
+    captured = capsys.readouterr()
+    assert exit_code == 0
+    assert "best=prompted" in captured.out
+    report_path = next((tmp_path / "runs").glob("comparison-*.json"))
+    payload = json.loads(report_path.read_text())
+    assert payload["scenario_results"][0]["result"]["summary"]["prompt_id"] == "prefix"
+    assert payload["scenario_results"][0]["result"]["case_results"][0]["prompt_text"] == "Prompted: hello"
+
+
+def test_cli_compare_rejects_prompt_file_mismatch(tmp_path: Path):
+    dataset_path = _write_json(
+        tmp_path / "dataset.json",
+        [
+            {
+                "case_id": "echo-1",
+                "input_text": "hello",
+                "expected_answer": "hello"
+            }
+        ],
+    )
+    scenario_path = _write_json(
+        tmp_path / "scenarios.json",
+        [
+            {
+                "label": "prompted",
+                "provider": "echo",
+                "prompt_id": "prefix"
+            }
+        ],
+    )
+
+    try:
+        main([
+            "compare",
+            "--dataset",
+            str(dataset_path),
+            "--scenario-file",
+            str(scenario_path),
+            "--output-dir",
+            str(tmp_path / "runs"),
+        ])
+    except ValueError as exc:
+        assert "prompt-file" in str(exc)
+    else:
+        raise AssertionError("Expected compare to reject prompt scenarios without prompt-file")
+
+
+def test_cli_compare_validates_scenarios_before_provider_env(tmp_path: Path):
+    dataset_path = _write_json(
+        tmp_path / "dataset.json",
+        [
+            {
+                "case_id": "echo-1",
+                "input_text": "hello",
+                "expected_answer": "hello"
+            }
+        ],
+    )
+    scenario_path = _write_json(
+        tmp_path / "scenarios.json",
+        [
+            {
+                "label": "bad-prompt",
+                "provider": "openai",
+                "prompt_version": "v1"
+            }
+        ],
+    )
+
+    try:
+        with patch.dict("os.environ", {}, clear=True):
+            main([
+                "compare",
+                "--dataset",
+                str(dataset_path),
+                "--scenario-file",
+                str(scenario_path),
+                "--output-dir",
+                str(tmp_path / "runs"),
+            ])
+    except ValueError as exc:
+        assert "prompt_id" in str(exc)
+    else:
+        raise AssertionError("Expected scenario validation to run before provider env checks")
