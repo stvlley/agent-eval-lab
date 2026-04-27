@@ -3,4 +3,5 @@ __all__ = [
     "validators",
     "scoring",
     "runner",
+    "providers",
 ]
