@@ -92,26 +92,68 @@ class EvalRunResult:
         return asdict(self)
 
 
-@dataclass
+@dataclass(init=False)
 class ComparisonScenarioResult:
     label: str
     provider: str
     provider_model: str | None
-    prompt_id: str | None
-    prompt_version: str | None
-    result: EvalRunResult
+    prompt_id: str | None = None
+    prompt_version: str | None = None
+    result: EvalRunResult | None = None
+    provider_response: str | None = None
+
+    def __init__(
+        self,
+        label: str,
+        provider: str,
+        provider_model: str | None,
+        prompt_id: str | None = None,
+        prompt_version: str | None = None,
+        result: EvalRunResult | None = None,
+        provider_response: str | None = None,
+    ) -> None:
+        self.label = label
+        self.provider = provider
+        self.provider_model = provider_model
+        self.prompt_id = prompt_id
+        self.prompt_version = prompt_version
+        self.result = result
+        self.provider_response = provider_response
 
 
-@dataclass
+@dataclass(init=False)
 class ComparisonRanking:
     label: str
     provider: str
     provider_model: str | None
-    prompt_id: str | None
-    prompt_version: str | None
-    pass_rate: float
-    average_score: float
-    delta_vs_baseline: float
+    prompt_id: str | None = None
+    prompt_version: str | None = None
+    pass_rate: float = 0.0
+    average_score: float = 0.0
+    delta_vs_baseline: float = 0.0
+    provider_response: str | None = None
+
+    def __init__(
+        self,
+        label: str,
+        provider: str,
+        provider_model: str | None,
+        prompt_id: str | None = None,
+        prompt_version: str | None = None,
+        pass_rate: float = 0.0,
+        average_score: float = 0.0,
+        delta_vs_baseline: float = 0.0,
+        provider_response: str | None = None,
+    ) -> None:
+        self.label = label
+        self.provider = provider
+        self.provider_model = provider_model
+        self.prompt_id = prompt_id
+        self.prompt_version = prompt_version
+        self.pass_rate = pass_rate
+        self.average_score = average_score
+        self.delta_vs_baseline = delta_vs_baseline
+        self.provider_response = provider_response
 
 
 @dataclass

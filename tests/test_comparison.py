@@ -48,6 +48,48 @@ def test_load_comparison_scenarios_rejects_duplicate_labels(tmp_path: Path):
         raise AssertionError("Expected duplicate scenario labels to be rejected")
 
 
+def test_load_comparison_scenarios_rejects_empty_label(tmp_path: Path):
+    scenario_path = tmp_path / "scenarios.json"
+    scenario_path.write_text(
+        json.dumps(
+            [
+                {"label": "", "provider": "echo"}
+            ]
+        )
+    )
+
+    try:
+        load_comparison_scenarios(scenario_path)
+    except ValueError as exc:
+        assert "label" in str(exc)
+    else:
+        raise AssertionError("Expected empty scenario labels to be rejected")
+
+
+def test_run_comparison_rejects_empty_label_in_direct_scenarios():
+    dataset = [EvalCase(case_id="1", input_text="hello", expected_answer="hello")]
+    config = EvalConfig(name="compare-smoke")
+
+    try:
+        run_comparison(dataset=dataset, config=config, scenarios=[{"label": "", "provider": "echo"}])
+    except ValueError as exc:
+        assert "label" in str(exc)
+    else:
+        raise AssertionError("Expected direct comparison scenarios with empty labels to be rejected")
+
+
+def test_run_comparison_rejects_whitespace_only_label():
+    dataset = [EvalCase(case_id="1", input_text="hello", expected_answer="hello")]
+    config = EvalConfig(name="compare-smoke")
+
+    try:
+        run_comparison(dataset=dataset, config=config, scenarios=[{"label": "   ", "provider": "echo"}])
+    except ValueError as exc:
+        assert "label" in str(exc)
+    else:
+        raise AssertionError("Expected whitespace-only comparison labels to be rejected")
+
+
 def test_load_comparison_scenarios_rejects_prompt_version_without_prompt_id(tmp_path: Path):
     scenario_path = tmp_path / "scenarios.json"
     scenario_path.write_text(

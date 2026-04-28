@@ -38,6 +38,8 @@ def validate_comparison_scenarios(scenarios: Sequence[ComparisonScenario]) -> No
     seen_labels: set[str] = set()
 
     for scenario in scenarios:
+        if not scenario.label or not scenario.label.strip():
+            raise ValueError("scenario label must be a non-empty string")
         if scenario.label in seen_labels:
             raise ValueError(f"Duplicate scenario label: {scenario.label}")
         seen_labels.add(scenario.label)
@@ -95,6 +97,7 @@ def run_comparison(
                 label=scenario.label,
                 provider=scenario.provider,
                 provider_model=scenario.provider_model,
+                provider_response=scenario.provider_response,
                 prompt_id=scenario.prompt_id,
                 prompt_version=scenario.prompt_version,
                 result=eval_result,
@@ -108,6 +111,7 @@ def run_comparison(
             label=item.label,
             provider=item.provider,
             provider_model=item.provider_model,
+            provider_response=item.provider_response,
             prompt_id=item.prompt_id,
             prompt_version=item.prompt_version,
             pass_rate=item.result.summary.pass_rate,
